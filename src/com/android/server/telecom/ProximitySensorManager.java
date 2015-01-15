@@ -18,7 +18,7 @@ package com.android.server.telecom;
 
 import android.content.Context;
 import android.os.PowerManager;
-import org.cyanogenmod.hardware.TapToWake;
+import org.mokee.hardware.TapToWake;
 
 /**
  * This class manages the proximity sensor and allows callers to turn it on and off.
