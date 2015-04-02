@@ -202,6 +202,8 @@ final class Call implements CreateConnectionResponse {
      */
     private long mCreationTimeMillis = System.currentTimeMillis();
 
+    private String mGeocodedLocation;
+
     /** The time this call was made active. */
     private long mConnectTimeMillis = 0;
 
@@ -698,6 +700,14 @@ final class Call implements CreateConnectionResponse {
 
     void setCreationTimeMillis(long time) {
         mCreationTimeMillis = time;
+    }
+
+    String getGeocodedLocation() {
+        return mGeocodedLocation;
+    }
+
+    void setGeocodedLocation(String geocode) {
+        mGeocodedLocation = geocode;
     }
 
     long getConnectTimeMillis() {

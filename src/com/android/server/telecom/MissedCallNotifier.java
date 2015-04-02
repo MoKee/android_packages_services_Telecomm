@@ -29,6 +29,8 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.mokee.location.PhoneLocation;
+import android.mokee.utils.MoKeeUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.UserHandle;
@@ -58,6 +60,7 @@ class MissedCallNotifier extends CallsManagerListenerBase {
         Calls.DATE,
         Calls.DURATION,
         Calls.TYPE,
+        Calls.GEOCODED_LOCATION,
     };
 
     private static final int CALL_LOG_COLUMN_ID = 0;
@@ -205,14 +208,19 @@ class MissedCallNotifier extends CallsManagerListenerBase {
         String handle = call.getHandle() == null ? null : call.getHandle().getSchemeSpecificPart();
         String name = call.getName();
 
+        CharSequence location = "";
+        if (MoKeeUtils.isSupportLanguage(true)) {
+            location = call.getGeocodedLocation();
+        }
+
         if (!TextUtils.isEmpty(name) && TextUtils.isGraphic(name)) {
-            return name;
+            return !TextUtils.isEmpty(location) ? name + " " + location : name;
         } else if (!TextUtils.isEmpty(handle)) {
             // A handle should always be displayed LTR using {@link BidiFormatter} regardless of the
             // content of the rest of the notification.
             // TODO: Does this apply to SIP addresses?
             BidiFormatter bidiFormatter = BidiFormatter.getInstance();
-            return bidiFormatter.unicodeWrap(handle, TextDirectionHeuristics.LTR);
+            return !TextUtils.isEmpty(location) ? bidiFormatter.unicodeWrap(handle, TextDirectionHeuristics.LTR) + " " + location : bidiFormatter.unicodeWrap(handle, TextDirectionHeuristics.LTR);
         } else {
             // Use "unknown" if the call is unidentifiable.
             return mContext.getString(R.string.unknown);
@@ -326,6 +334,9 @@ class MissedCallNotifier extends CallsManagerListenerBase {
                                     cursor.getInt(CALL_LOG_COLUMN_NUMBER_PRESENTATION);
                             final long date = cursor.getLong(CALL_LOG_COLUMN_DATE);
 
+                            int geocodeIndex = cursor.getColumnIndex(Calls.GEOCODED_LOCATION);
+                            final String geocode = cursor.getString(geocodeIndex);
+
                             final Uri handle;
                             if (presentation != Calls.PRESENTATION_ALLOWED
                                     || TextUtils.isEmpty(handleString)) {
@@ -342,6 +353,7 @@ class MissedCallNotifier extends CallsManagerListenerBase {
                             call.setDisconnectCause(new DisconnectCause(DisconnectCause.MISSED));
                             call.setState(CallState.DISCONNECTED);
                             call.setCreationTimeMillis(date);
+                            call.setGeocodedLocation(geocode);
 
                             // Listen for the update to the caller information before posting the
                             // notification so that we have the contact info and photo.
