@@ -2193,7 +2193,9 @@ public final class CallsManager extends Call.ListenerBase {
         if (number == null) {
             return false;
         }
-
+        if (BlacklistUtils.isBlacklistAllNumberEnabled(mContext)) {
+            return true;
+        }
         // See if the number is in the blacklist
         // Result is one of: MATCH_NONE, MATCH_LIST or MATCH_REGEX
         int listType = BlacklistUtils.isListed(mContext, number, BlacklistUtils.BLOCK_CALLS);
