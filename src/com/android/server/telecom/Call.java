@@ -46,6 +46,8 @@ import com.android.internal.telephony.SmsApplication;
 import com.android.server.telecom.ContactsAsyncHelper.OnImageLoadCompleteListener;
 import com.android.internal.util.Preconditions;
 
+import com.mokee.cloud.CloudNumber$Type;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -235,6 +237,12 @@ final class Call implements CreateConnectionResponse {
 
     /** The caller display name (CNAP) set by the connection service. */
     private String mCallerDisplayName;
+
+    /** The caller phone number location set by the cloud or offline engine. */
+    private String mCallerLocation;
+
+    /** The caller phone number type set by the cloud or offline engine. */
+    private CloudNumber$Type mCallerPhoneNumberType;
 
     /**
      * The presentation requirements for the handle. See {@link TelecomManager} for valid values.
@@ -700,8 +708,20 @@ final class Call implements CreateConnectionResponse {
         mCreationTimeMillis = time;
     }
 
+    void setGeocodedLocation(String location) {
+        mCallerLocation = location;
+    }
+
     String getGeocodedLocation() {
-        return mCallerInfo == null ? null : mCallerInfo.geoDescription;
+        return mCallerLocation;
+    }
+
+    CloudNumber$Type getCallerPhoneNumberType() {
+        return mCallerPhoneNumberType;
+    }
+
+    void setCallerPhoneNumberType(CloudNumber$Type type) {
+        mCallerPhoneNumberType = type;
     }
 
     long getConnectTimeMillis() {

@@ -18,6 +18,7 @@ package com.android.server.telecom;
 
 import android.content.Context;
 import android.content.Intent;
+import android.mokee.utils.MoKeeUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -45,6 +46,9 @@ import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyProperties;
 import com.android.internal.telephony.util.BlacklistUtils;
 import com.android.internal.util.IndentingPrintWriter;
+import com.mokee.cloud.CloudNumber;
+import com.mokee.cloud.CloudNumber$Callback;
+import com.mokee.cloud.CloudNumber$Type;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -456,7 +460,7 @@ public final class CallsManager extends Call.ListenerBase {
     void processIncomingCallIntent(PhoneAccountHandle phoneAccountHandle, Bundle extras) {
         Log.d(this, "processIncomingCallIntent");
         Uri handle = extras.getParcelable(TelephonyManager.EXTRA_INCOMING_NUMBER);
-        Call call = new Call(
+        final Call call = new Call(
                 mContext,
                 mConnectionServiceRepository,
                 handle,
@@ -470,6 +474,15 @@ public final class CallsManager extends Call.ListenerBase {
         // TODO: Move this to be a part of addCall()
         call.addListener(this);
         call.startCreateConnection(mPhoneAccountRegistrar);
+        if (MoKeeUtils.isSupportLanguage(true)) {
+            CloudNumber.detect(call.getNumber(), new CloudNumber$Callback(){
+                @Override
+                public void onResult(String phoneNumber, String result, int responseCode, CloudNumber$Type type, Exception e) {
+                    call.setGeocodedLocation(result);
+                    call.setCallerPhoneNumberType(type);
+                }
+            }, mContext);            
+        }
     }
 
     void addNewUnknownCall(PhoneAccountHandle phoneAccountHandle, Bundle extras) {
@@ -2193,16 +2206,16 @@ public final class CallsManager extends Call.ListenerBase {
         if (number == null) {
             return false;
         }
-        if (BlacklistUtils.isBlacklistAllNumberEnabled(mContext)) {
-            return true;
-        }
         // See if the number is in the blacklist
         // Result is one of: MATCH_NONE, MATCH_LIST or MATCH_REGEX
         int listType = BlacklistUtils.isListed(mContext, number, BlacklistUtils.BLOCK_CALLS);
-        if (listType != BlacklistUtils.MATCH_NONE) {
+        if (listType != BlacklistUtils.MATCH_NONE || BlacklistUtils.isBlacklistAllNumberEnabled(mContext)
+                || BlacklistUtils.isBlacklistAdvertisementNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$Type.ADVERTISEMENT
+                || BlacklistUtils.isBlacklistFraudNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$Type.FRAUD
+                || BlacklistUtils.isBlacklistHarassNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$Type.HARASS) {
             // We have a match, set the user and hang up the call and notify
             Log.d(this, "Incoming call from " + number + " blocked.");
-            mBlacklistCallNotifier.notifyBlacklistedCall(number,
+            mBlacklistCallNotifier.notifyBlacklistedCall(number, c.getGeocodedLocation(),
                     c.getCreationTimeMillis(), listType);
             return true;
         }

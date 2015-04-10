@@ -59,6 +59,7 @@ class MissedCallNotifier extends CallsManagerListenerBase {
         Calls.DATE,
         Calls.DURATION,
         Calls.TYPE,
+        Calls.GEOCODED_LOCATION,
     };
 
     private static final int CALL_LOG_COLUMN_ID = 0;
@@ -67,6 +68,7 @@ class MissedCallNotifier extends CallsManagerListenerBase {
     private static final int CALL_LOG_COLUMN_DATE = 3;
     private static final int CALL_LOG_COLUMN_DURATION = 4;
     private static final int CALL_LOG_COLUMN_TYPE = 5;
+    private static final int CALL_LOG_COLUMN_GEOCODED_LOCATION = 6;
 
     private static final int MISSED_CALL_NOTIFICATION_ID = 1;
 
@@ -341,13 +343,14 @@ class MissedCallNotifier extends CallsManagerListenerBase {
                                         PhoneAccount.SCHEME_SIP : PhoneAccount.SCHEME_TEL,
                                                 handleString, null);
                             }
-
+                            final String location = cursor.getString(CALL_LOG_COLUMN_GEOCODED_LOCATION);
                             // Convert the data to a call object
                             Call call = new Call(mContext, null, null, null, null, null, true,
                                     false);
                             call.setDisconnectCause(new DisconnectCause(DisconnectCause.MISSED));
                             call.setState(CallState.DISCONNECTED);
                             call.setCreationTimeMillis(date);
+                            call.setGeocodedLocation(location);
 
                             // Listen for the update to the caller information before posting the
                             // notification so that we have the contact info and photo.

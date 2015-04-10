@@ -1,5 +1,6 @@
 /*
  * Copyright 2014, The Android Open Source Project
+ * Copyright 2015, The MoKee OpenSource Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,11 +52,13 @@ class BlacklistCallNotifier extends CallsManagerListenerBase {
     // used to track blacklisted calls and messages
     private static class BlacklistedItemInfo {
         String number;
+        String location;
         long date;
         int matchType;
 
-        BlacklistedItemInfo(String number, long date, int matchType) {
+        BlacklistedItemInfo(String number, String location, long date, int matchType) {
             this.number = number;
+            this.location = location;
             this.date = date;
             this.matchType = matchType;
         }
@@ -77,15 +80,15 @@ class BlacklistCallNotifier extends CallsManagerListenerBase {
 
     }
 
-    /* package */ void notifyBlacklistedCall(String number, long date, int matchType) {
-        notifyBlacklistedItem(number, date, matchType, BLACKLISTED_CALL_NOTIFICATION);
+    /* package */ void notifyBlacklistedCall(String number, String location, long date, int matchType) {
+        notifyBlacklistedItem(number, location, date, matchType, BLACKLISTED_CALL_NOTIFICATION);
     }
 
     /* package */ void notifyBlacklistedMessage(String number, long date, int matchType) {
-        notifyBlacklistedItem(number, date, matchType, BLACKLISTED_MESSAGE_NOTIFICATION);
+        notifyBlacklistedItem(number, null, date, matchType, BLACKLISTED_MESSAGE_NOTIFICATION);
     }
 
-    private void notifyBlacklistedItem(String number, long date,
+    private void notifyBlacklistedItem(String number, String location, long date,
                                        int matchType, int notificationId) {
         if (!BlacklistUtils.isBlacklistNotifyEnabled(mContext)) {
             return;
@@ -102,7 +105,7 @@ class BlacklistCallNotifier extends CallsManagerListenerBase {
                 ? R.drawable.ic_block_contact_holo_dark : R.drawable.ic_block_message_holo_dark;
 
         // Keep track of the call/message, keeping list sorted from newest to oldest
-        items.add(0, new BlacklistedItemInfo(number, date, matchType));
+        items.add(0, new BlacklistedItemInfo(number, location, date, matchType));
 
         // Get the intent to open Blacklist settings if user taps on content ready
         Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -144,7 +147,7 @@ class BlacklistCallNotifier extends CallsManagerListenerBase {
                             : R.string.blacklist_message_notification;
                     break;
             }
-            builder.setContentText(mContext.getString(messageResId, number));
+            builder.setContentText(mContext.getString(messageResId, TextUtils.isEmpty(location) ? number : number + " " + location));
 
             if (matchType != BlacklistUtils.MATCH_LIST) {
                 addUnblockAction = false;
@@ -164,7 +167,7 @@ class BlacklistCallNotifier extends CallsManagerListenerBase {
                 // Takes care of displaying "Private" instead of an empty string
                 String numberString = TextUtils.isEmpty(info.number)
                         ? mContext.getString(R.string.blacklist_notification_list_private)
-                        : info.number;
+                        : TextUtils.isEmpty(info.location) ? info.number : info.number + " " + info.location;
                 style.addLine(formatSingleCallLine(numberString, info.date));
 
                 if (!TextUtils.equals(number, info.number)) {
