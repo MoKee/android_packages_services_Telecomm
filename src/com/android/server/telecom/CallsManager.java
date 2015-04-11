@@ -482,7 +482,7 @@ public final class CallsManager extends Call.ListenerBase {
                     call.setGeocodedLocation(result);
                     call.setCallerPhoneNumberType(type);
                 }
-            }, mContext);            
+            }, mContext);
         }
     }
 
