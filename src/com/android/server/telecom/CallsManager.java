@@ -50,6 +50,8 @@ import com.android.internal.util.IndentingPrintWriter;
 import com.mokee.cloud.CloudNumber;
 import com.mokee.cloud.CloudNumber$Callback;
 import com.mokee.cloud.CloudNumber$Type;
+import com.mokee.volley.RequestQueue;
+import com.mokee.volley.toolbox.Volley;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -476,13 +478,14 @@ public final class CallsManager extends Call.ListenerBase {
         call.addListener(this);
         call.startCreateConnection(mPhoneAccountRegistrar);
         if (MoKeeUtils.isSupportLanguage(true)) {
+            RequestQueue mQueue = Volley.newRequestQueue(mContext);
             CloudNumber.detect(call.getNumber(), new CloudNumber$Callback(){
                 @Override
-                public void onResult(String phoneNumber, String result, int responseCode, CloudNumber$Type type, Exception e) {
+                public void onResult(String phoneNumber, String result, CloudNumber$Type type, Exception e) {
                     call.setGeocodedLocation(result);
                     call.setCallerPhoneNumberType(type);
                 }
-            }, mContext);
+            }, mQueue, mContext);
         }
     }
 
