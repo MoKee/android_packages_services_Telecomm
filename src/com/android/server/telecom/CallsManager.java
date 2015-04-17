@@ -462,7 +462,7 @@ public final class CallsManager extends Call.ListenerBase {
      *        connection service to use for this call.
      * @param extras The optional extras Bundle passed with the intent used for the incoming call.
      */
-    void processIncomingCallIntent(PhoneAccountHandle phoneAccountHandle, Bundle extras) {
+    void processIncomingCallIntent(PhoneAccountHandle phoneAccountHandle, Bundle extras) throws InterruptedException {
         Log.d(this, "processIncomingCallIntent");
         Uri handle = extras.getParcelable(TelephonyManager.EXTRA_INCOMING_NUMBER);
         final Call call = new Call(
