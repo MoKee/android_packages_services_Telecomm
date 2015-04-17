@@ -149,6 +149,8 @@ public final class CallsManager extends Call.ListenerBase {
 
     private boolean mCanAddCall = true;
 
+    private long cloudSearchStartTime;
+
     /**
      * The call the user is currently interacting with. This is the call that should have audio
      * focus and be visible in the in-call UI.
@@ -486,6 +488,10 @@ public final class CallsManager extends Call.ListenerBase {
                     call.setCallerPhoneNumberType(type);
                 }
             }, mQueue, mContext);
+            cloudSearchStartTime = System.currentTimeMillis();
+            while (call.getCallerPhoneNumberType() == null && cloudSearchStartTime + 6000 > System.currentTimeMillis()) {
+                Thread.sleep(100);
+            }
         }
     }
 
