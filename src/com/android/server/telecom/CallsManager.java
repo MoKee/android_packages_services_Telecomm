@@ -462,7 +462,7 @@ public final class CallsManager extends Call.ListenerBase {
      *        connection service to use for this call.
      * @param extras The optional extras Bundle passed with the intent used for the incoming call.
      */
-    void processIncomingCallIntent(PhoneAccountHandle phoneAccountHandle, Bundle extras) throws InterruptedException {
+    void processIncomingCallIntent(PhoneAccountHandle phoneAccountHandle, Bundle extras) {
         Log.d(this, "processIncomingCallIntent");
         Uri handle = extras.getParcelable(TelephonyManager.EXTRA_INCOMING_NUMBER);
         final Call call = new Call(
@@ -490,7 +490,10 @@ public final class CallsManager extends Call.ListenerBase {
             }, mQueue, mContext);
             cloudSearchStartTime = System.currentTimeMillis();
             while (call.getCallerPhoneNumberType() == null && cloudSearchStartTime + 6000 > System.currentTimeMillis()) {
-                Thread.sleep(100);
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException exception) {
+                }   
             }
         }
     }
