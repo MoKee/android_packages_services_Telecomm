@@ -494,7 +494,7 @@ public final class CallsManager extends Call.ListenerBase {
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException exception) {
-                }   
+                }
             }
         }
     }
