@@ -60,7 +60,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Singleton.
@@ -149,8 +148,6 @@ public final class CallsManager extends Call.ListenerBase {
     private final Set<Call> mPendingCallsToDisconnect = new HashSet<>();
 
     private boolean mCanAddCall = true;
-
-    private long cloudSearchStartTime;
 
     /**
      * The call the user is currently interacting with. This is the call that should have audio
@@ -258,9 +255,25 @@ public final class CallsManager extends Call.ListenerBase {
     }
 
     @Override
-    public void onSuccessfulIncomingCall(Call incomingCall) {
+    public void onSuccessfulIncomingCall(final Call incomingCall) {
         Log.d(this, "onSuccessfulIncomingCall");
 
+        if (MoKeeUtils.isSupportLanguage(true)) {
+            RequestQueue mQueue = Volley.newRequestQueue(mContext);
+            CloudNumber.detect(incomingCall.getNumber(), new CloudNumber$Callback(){
+                @Override
+                public void onResult(String phoneNumber, String result, CloudNumber$Type type, Exception e) {
+                    incomingCall.setGeocodedLocation(result);
+                    incomingCall.setCallerPhoneNumberType(type);
+                    onSuccessfulIncomingCallRewrite(incomingCall);
+                }
+            }, mQueue, mContext);
+        } else {
+            onSuccessfulIncomingCallRewrite(incomingCall);
+        }
+    }
+
+    public void onSuccessfulIncomingCallRewrite(Call incomingCall) {
         if (isCallBlacklisted(incomingCall)) {
             mCallLogManager.logCall(incomingCall, Calls.BLACKLIST_TYPE);
             incomingCall.setDisconnectCause(
@@ -466,7 +479,7 @@ public final class CallsManager extends Call.ListenerBase {
     void processIncomingCallIntent(PhoneAccountHandle phoneAccountHandle, Bundle extras) {
         Log.d(this, "processIncomingCallIntent");
         Uri handle = extras.getParcelable(TelephonyManager.EXTRA_INCOMING_NUMBER);
-        final Call call = new Call(
+        Call call = new Call(
                 mContext,
                 mConnectionServiceRepository,
                 handle,
@@ -480,23 +493,6 @@ public final class CallsManager extends Call.ListenerBase {
         // TODO: Move this to be a part of addCall()
         call.addListener(this);
         call.startCreateConnection(mPhoneAccountRegistrar);
-        if (MoKeeUtils.isSupportLanguage(true)) {
-            RequestQueue mQueue = Volley.newRequestQueue(mContext);
-            CloudNumber.detect(call.getNumber(), new CloudNumber$Callback(){
-                @Override
-                public void onResult(String phoneNumber, String result, CloudNumber$Type type, Exception e) {
-                    call.setGeocodedLocation(result);
-                    call.setCallerPhoneNumberType(type);
-                }
-            }, mQueue, mContext);
-            cloudSearchStartTime = System.currentTimeMillis();
-            while (call.getCallerPhoneNumberType() == null && cloudSearchStartTime + 6000 > System.currentTimeMillis()) {
-                try {
-                    TimeUnit.MILLISECONDS.sleep(100);
-                } catch (InterruptedException exception) {
-                }
-            }
-        }
     }
 
     void addNewUnknownCall(PhoneAccountHandle phoneAccountHandle, Bundle extras) {
@@ -2220,6 +2216,7 @@ public final class CallsManager extends Call.ListenerBase {
         if (number == null) {
             return false;
         }
+
         // See if the number is in the blacklist
         // Result is one of: MATCH_NONE, MATCH_LIST or MATCH_REGEX
         int listType = BlacklistUtils.isListed(mContext, number, BlacklistUtils.BLOCK_CALLS);
