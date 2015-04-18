@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Singleton.
@@ -491,7 +492,7 @@ public final class CallsManager extends Call.ListenerBase {
             cloudSearchStartTime = System.currentTimeMillis();
             while (call.getCallerPhoneNumberType() == null && cloudSearchStartTime + 6000 > System.currentTimeMillis()) {
                 try {
-                    Thread.sleep(100);
+                    TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException exception) {
                 }   
             }
