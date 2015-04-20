@@ -264,9 +264,14 @@ public final class CallsManager extends Call.ListenerBase {
             CloudNumber.detect(incomingCall.getNumber(), new CloudNumber$Callback(){
                 @Override
                 public void onResult(String phoneNumber, String result, CloudNumber$Type type, Exception e) {
-                    incomingCall.setGeocodedLocation(result);
-                    incomingCall.setCallerPhoneNumberType(type);
-                    onSuccessfulIncomingCallRewrite(incomingCall);
+                    if (incomingCall.getState() != CallState.DISCONNECTED) {
+                        incomingCall.setGeocodedLocation(result);
+                        incomingCall.setCallerPhoneNumberType(type);
+                        onSuccessfulIncomingCallRewrite(incomingCall);
+                    } else {
+                        mMissedCallNotifier.showMissedCallNotification(incomingCall);
+                        mCallLogManager.logCall(incomingCall, Calls.MISSED_TYPE);
+                    }
                 }
             }, mQueue, mContext);
         } else {
