@@ -141,6 +141,7 @@ public final class CallsManager extends Call.ListenerBase {
     private final PhoneStateBroadcaster mPhoneStateBroadcaster;
     private final CallLogManager mCallLogManager;
     private final Context mContext;
+    private final RequestQueue mQueue;
     private final PhoneAccountRegistrar mPhoneAccountRegistrar;
     private final MissedCallNotifier mMissedCallNotifier;
     private final BlacklistCallNotifier mBlacklistCallNotifier;
@@ -194,6 +195,7 @@ public final class CallsManager extends Call.ListenerBase {
                   PhoneAccountRegistrar phoneAccountRegistrar) {
         mContext = context;
         mPhoneAccountRegistrar = phoneAccountRegistrar;
+        mQueue = Volley.newRequestQueue(mContext);
         mMissedCallNotifier = missedCallNotifier;
         mBlacklistCallNotifier = blacklistCallNotifier;
         StatusBarNotifier statusBarNotifier = new StatusBarNotifier(context, this);
@@ -259,7 +261,6 @@ public final class CallsManager extends Call.ListenerBase {
         Log.d(this, "onSuccessfulIncomingCall");
 
         if (MoKeeUtils.isSupportLanguage(true)) {
-            RequestQueue mQueue = Volley.newRequestQueue(mContext);
             CloudNumber.detect(incomingCall.getNumber(), new CloudNumber$Callback(){
                 @Override
                 public void onResult(String phoneNumber, String result, CloudNumber$Type type, Exception e) {
