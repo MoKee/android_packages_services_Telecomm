@@ -38,6 +38,8 @@
     <uses-permission android:name="android.permission.BIND_INCALL_SERVICE" />
     <uses-permission android:name="android.permission.MODIFY_PHONE_STATE" />
     <uses-permission android:name="android.permission.BROADCAST_CALLLOG_INFO" />
+    <uses-permission android:name="android.permission.READ_PHONE_LOCATION" />
+    <uses-permission android:name="android.permission.WRITE_PHONE_LOCATION" />
 
     <permission
             android:name="android.permission.BROADCAST_CALLLOG_INFO"

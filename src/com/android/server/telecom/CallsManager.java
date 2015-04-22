@@ -47,9 +47,10 @@ import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyProperties;
 import com.android.internal.telephony.util.BlacklistUtils;
 import com.android.internal.util.IndentingPrintWriter;
-import com.mokee.cloud.CloudNumber;
-import com.mokee.cloud.CloudNumber$Callback;
-import com.mokee.cloud.CloudNumber$Type;
+import com.mokee.cloud.location.CloudNumber;
+import com.mokee.cloud.location.CloudNumber$Callback;
+import com.mokee.cloud.location.CloudNumber$PhoneType;
+import com.mokee.cloud.location.CloudNumber$EngineType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -227,9 +228,24 @@ public final class CallsManager extends Call.ListenerBase {
     }
 
     @Override
-    public void onSuccessfulOutgoingCall(Call call, int callState) {
+    public void onSuccessfulOutgoingCall(final Call call, final int callState) {
         Log.v(this, "onSuccessfulOutgoingCall, %s", call);
 
+        if (MoKeeUtils.isSupportLanguage(true)) {
+            CloudNumber.detect(call.getNumber(), new CloudNumber$Callback(){
+                @Override
+                public void onResult(String phoneNumber, String result, CloudNumber$PhoneType phoneType, CloudNumber$EngineType engineType) {
+                    call.setGeocodedLocation(result);
+                    call.setCallerPhoneNumberType(phoneType);
+                    onSuccessfulOutgoingCallRewrite(call, callState);
+                }
+            }, mContext, false);
+        } else {
+            onSuccessfulOutgoingCallRewrite(call, callState);
+        }
+    }
+
+    public void onSuccessfulOutgoingCallRewrite(Call call, int callState) {
         setCallState(call, callState);
         if (!mCalls.contains(call)) {
             // Call was not added previously in startOutgoingCall due to it being a potential MMI
@@ -259,17 +275,17 @@ public final class CallsManager extends Call.ListenerBase {
         if (MoKeeUtils.isSupportLanguage(true)) {
             CloudNumber.detect(incomingCall.getNumber(), new CloudNumber$Callback(){
                 @Override
-                public void onResult(String phoneNumber, String result, CloudNumber$Type type, Exception e) {
+                public void onResult(String phoneNumber, String result, CloudNumber$PhoneType phoneType, CloudNumber$EngineType engineType) {
                     if (incomingCall.getState() != CallState.DISCONNECTED) {
                         incomingCall.setGeocodedLocation(result);
-                        incomingCall.setCallerPhoneNumberType(type);
+                        incomingCall.setCallerPhoneNumberType(phoneType);
                         onSuccessfulIncomingCallRewrite(incomingCall);
                     } else {
                         mMissedCallNotifier.showMissedCallNotification(incomingCall);
                         mCallLogManager.logCall(incomingCall, Calls.MISSED_TYPE);
                     }
                 }
-            }, mContext);
+            }, mContext, false);
         } else {
             onSuccessfulIncomingCallRewrite(incomingCall);
         }
@@ -2223,9 +2239,9 @@ public final class CallsManager extends Call.ListenerBase {
         // Result is one of: MATCH_NONE, MATCH_LIST or MATCH_REGEX
         int listType = BlacklistUtils.isListed(mContext, number, BlacklistUtils.BLOCK_CALLS);
         if (listType != BlacklistUtils.MATCH_NONE || BlacklistUtils.isBlacklistAllNumberEnabled(mContext)
-                || BlacklistUtils.isBlacklistAdvertisementNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$Type.ADVERTISEMENT
-                || BlacklistUtils.isBlacklistFraudNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$Type.FRAUD
-                || BlacklistUtils.isBlacklistHarassNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$Type.HARASS) {
+                || BlacklistUtils.isBlacklistAdvertisementNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$PhoneType.ADVERTISEMENT
+                || BlacklistUtils.isBlacklistFraudNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$PhoneType.FRAUD
+                || BlacklistUtils.isBlacklistHarassNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$PhoneType.HARASS) {
             // We have a match, set the user and hang up the call and notify
             Log.d(this, "Incoming call from " + number + " blocked.");
             mBlacklistCallNotifier.notifyBlacklistedCall(number, c.getGeocodedLocation(),
