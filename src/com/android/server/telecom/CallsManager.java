@@ -235,9 +235,11 @@ public final class CallsManager extends Call.ListenerBase {
             CloudNumber.detect(call.getNumber(), new CloudNumber$Callback(){
                 @Override
                 public void onResult(String phoneNumber, String result, CloudNumber$PhoneType phoneType, CloudNumber$EngineType engineType) {
-                    call.setGeocodedLocation(result);
-                    call.setCallerPhoneNumberType(phoneType);
-                    onSuccessfulOutgoingCallRewrite(call, callState);
+                    if (call.getState() == CallState.CONNECTING) {
+                        call.setGeocodedLocation(result);
+                        call.setCallerPhoneNumberType(phoneType);
+                        onSuccessfulOutgoingCallRewrite(call, callState);
+                    }
                 }
             }, mContext, false);
         } else {
