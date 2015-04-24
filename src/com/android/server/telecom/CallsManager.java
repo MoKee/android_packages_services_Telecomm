@@ -41,6 +41,7 @@ import android.telecom.TelecomManager;
 import android.telecom.VideoProfile;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 
 import com.android.internal.telephony.CallStateException;
 import com.android.internal.telephony.PhoneConstants;
@@ -235,7 +236,7 @@ public final class CallsManager extends Call.ListenerBase {
     public void onSuccessfulOutgoingCall(final Call call, final int callState) {
         Log.v(this, "onSuccessfulOutgoingCall, %s", call);
 
-        if (MoKeeUtils.isSupportLanguage(true)) {
+        if (MoKeeUtils.isSupportLanguage(true) && !TextUtils.isEmpty(call.getNumber())) {
             CloudNumber.detect(call.getNumber(), new CloudNumber$Callback(){
                 @Override
                 public void onResult(String phoneNumber, String result, CloudNumber$PhoneType phoneType, CloudNumber$EngineType engineType) {
@@ -278,7 +279,7 @@ public final class CallsManager extends Call.ListenerBase {
     public void onSuccessfulIncomingCall(final Call incomingCall) {
         Log.d(this, "onSuccessfulIncomingCall");
 
-        if (MoKeeUtils.isSupportLanguage(true)) {
+        if (MoKeeUtils.isSupportLanguage(true) && !TextUtils.isEmpty(incomingCall.getNumber())) {
             CloudNumber.detect(incomingCall.getNumber(), new CloudNumber$Callback(){
                 @Override
                 public void onResult(String phoneNumber, String result, CloudNumber$PhoneType phoneType, CloudNumber$EngineType engineType) {
