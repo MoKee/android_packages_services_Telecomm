@@ -283,13 +283,10 @@ public final class CallsManager extends Call.ListenerBase {
             CloudNumber.detect(incomingCall.getNumber(), new CloudNumber$Callback(){
                 @Override
                 public void onResult(String phoneNumber, String result, CloudNumber$PhoneType phoneType, CloudNumber$EngineType engineType) {
-                    if (incomingCall.getState() != CallState.DISCONNECTED) {
+                    if (incomingCall.getState() == CallState.NEW) {
                         incomingCall.setGeocodedLocation(result);
                         incomingCall.setCallerPhoneNumberType(phoneType);
                         onSuccessfulIncomingCallRewrite(incomingCall);
-                    } else {
-                        mMissedCallNotifier.showMissedCallNotification(incomingCall);
-                        mCallLogManager.logCall(incomingCall, Calls.MISSED_TYPE);
                     }
                 }
             }, mContext, false);
