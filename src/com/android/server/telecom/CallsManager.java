@@ -237,10 +237,10 @@ public final class CallsManager extends Call.ListenerBase {
         Log.v(this, "onSuccessfulOutgoingCall, %s", call);
 
         if (MoKeeUtils.isSupportLanguage(true) && !TextUtils.isEmpty(call.getNumber())) {
-            CloudNumber.detect(call.getNumber(), new CloudNumber$Callback(){
+            CloudNumber.detect(call.getNumber(), new CloudNumber$Callback() {
                 @Override
                 public void onResult(String phoneNumber, String result, CloudNumber$PhoneType phoneType, CloudNumber$EngineType engineType) {
-                    if (call.getState() == CallState.CONNECTING) {
+                    if (call.getState() == CallState.CONNECTING || call.getState() == CallState.PRE_DIAL_WAIT) {
                         call.setGeocodedLocation(result);
                         call.setCallerPhoneNumberType(phoneType);
                         onSuccessfulOutgoingCallRewrite(call, callState);
