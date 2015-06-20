@@ -147,7 +147,11 @@ class BlacklistCallNotifier extends CallsManagerListenerBase {
                             : R.string.blacklist_message_notification;
                     break;
             }
-            builder.setContentText(mContext.getString(messageResId, TextUtils.isEmpty(location) ? number : number + " " + location));
+            String contentNumber = number;
+            if (contentNumber == null) {
+                contentNumber = "";
+            }
+            builder.setContentText(mContext.getString(messageResId, TextUtils.isEmpty(location) ? contentNumber : contentNumber + " " + location));
 
             if (matchType != BlacklistUtils.MATCH_LIST) {
                 addUnblockAction = false;
