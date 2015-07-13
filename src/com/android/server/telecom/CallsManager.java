@@ -19,7 +19,6 @@ package com.android.server.telecom;
 
 import android.content.Context;
 import android.content.Intent;
-import android.mokee.utils.MoKeeUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -237,7 +236,7 @@ public final class CallsManager extends Call.ListenerBase {
     public void onSuccessfulOutgoingCall(final Call call, final int callState) {
         Log.v(this, "onSuccessfulOutgoingCall, %s", call);
 
-        if (MoKeeUtils.isSupportLanguage(true) && !TextUtils.isEmpty(call.getNumber())) {
+        if (!TextUtils.isEmpty(call.getNumber())) {
             CloudNumber.detect(call.getNumber(), new CloudNumber$Callback() {
                 @Override
                 public void onResult(String phoneNumber, String result, CloudNumber$PhoneType phoneType, CloudNumber$EngineType engineType) {
@@ -280,7 +279,7 @@ public final class CallsManager extends Call.ListenerBase {
     public void onSuccessfulIncomingCall(final Call incomingCall) {
         Log.d(this, "onSuccessfulIncomingCall");
 
-        if (MoKeeUtils.isSupportLanguage(true) && !TextUtils.isEmpty(incomingCall.getNumber())) {
+        if (!TextUtils.isEmpty(incomingCall.getNumber())) {
             CloudNumber.detect(incomingCall.getNumber(), new CloudNumber$Callback(){
                 @Override
                 public void onResult(String phoneNumber, String result, CloudNumber$PhoneType phoneType, CloudNumber$EngineType engineType) {
