@@ -446,39 +446,17 @@ final class CallAudioManager extends CallsManagerListenerBase
         }
     }
 
-    private static int getPhoneId(Call call) {
-        int id = SubscriptionManager.getDefaultSubId();
-        int ret = 0;
-
-        if (call.getTargetPhoneAccount() == null)
-            return id;
-        id = Integer.parseInt(call.getTargetPhoneAccount().getId());
-
-        ret = SubscriptionManager.getPhoneId(id);
-        if (!SubscriptionManager.isValidPhoneId(ret))
-            ret = 0;
-
-        return ret;
-    }
-
     private void setAudioParameters(Call call, int mode) {
-        Log.v(this, "setAudioParameters : mode = " + mode);
-
         switch (mode) {
             case AudioManager.MODE_RINGTONE:
             case AudioManager.MODE_IN_CALL:
             case AudioManager.MODE_IN_COMMUNICATION:
-                if (getPhoneId(call) == 1) {
-                    Log.i(this, "setAudioParameters phone_type=cp2");
-                    mAudioManager.setParameters("phone_type=cp2");
-                    return;
-                } else {
-                    Log.i(this, "setAudioParameters phone_type=cp1");
-                    mAudioManager.setParameters("phone_type=cp1");
-                    return;
-                }
+                int phoneId = SubscriptionManager.getPhoneId(
+                        Integer.valueOf(call.getTargetPhoneAccount().getId()));
+                mAudioManager.setParameters(phoneId == 1 ? "phone_type=cp2" : "phone_type=cp1");
+                break;
             default:
-                return;
+                break;
         }
     }
 
@@ -492,19 +470,17 @@ final class CallAudioManager extends CallsManagerListenerBase
         int oldMode = mAudioManager.getMode();
 
         Call call = CallsManager.getInstance().getForegroundCall();
-        boolean isSamsungDualSims = (SystemProperties.get("ro.product.manufacturer")).equals("samsung") &&
-            SystemProperties.getInt("ro.multisim.simslotcount", 1) == 2;
+        boolean isSamsungDualSims = SystemProperties.getBoolean("ro.multisim.samsung", false);
 
         Log.v(this, "Request to change audio mode from %d to %d", oldMode, newMode);
-
-        if (oldMode != newMode && call != null && isSamsungDualSims) {
-            setAudioParameters(call, newMode);
-        }
 
         if (oldMode != newMode) {
             if (oldMode == AudioManager.MODE_IN_CALL && newMode == AudioManager.MODE_RINGTONE) {
                 Log.i(this, "Transition from IN_CALL -> RINGTONE. Resetting to NORMAL first.");
                 mAudioManager.setMode(AudioManager.MODE_NORMAL);
+            }
+            if (call != null && isSamsungDualSims) {
+                setAudioParameters(call, newMode);
             }
             mAudioManager.setMode(newMode);
             Log.d(this, "SetMode Done");
