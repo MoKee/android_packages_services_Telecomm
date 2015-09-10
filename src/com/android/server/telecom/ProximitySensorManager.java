@@ -19,7 +19,7 @@ package com.android.server.telecom;
 import android.content.Context;
 import android.os.PowerManager;
 
-import cyanogenmod.hardware.CMHardwareManager;
+import mokee.hardware.MKHardwareManager;
 
 /**
  * This class manages the proximity sensor and allows callers to turn it on and off.
@@ -29,11 +29,11 @@ public class ProximitySensorManager extends CallsManagerListenerBase {
 
     private final PowerManager.WakeLock mProximityWakeLock;
     private boolean mWasTapToWakeEnabled = false;
-    private final CMHardwareManager mHardware;
+    private final MKHardwareManager mHardware;
 
     public ProximitySensorManager(Context context) {
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        mHardware = CMHardwareManager.getInstance(context);
+        mHardware = MKHardwareManager.getInstance(context);
         if (pm.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
             mProximityWakeLock = pm.newWakeLock(
                     PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, TAG);
@@ -67,10 +67,10 @@ public class ProximitySensorManager extends CallsManagerListenerBase {
         if (!mProximityWakeLock.isHeld()) {
             Log.i(this, "Acquiring proximity wake lock");
             mProximityWakeLock.acquire();
-            if (mHardware.isSupported(CMHardwareManager.FEATURE_TAP_TO_WAKE)) {
+            if (mHardware.isSupported(MKHardwareManager.FEATURE_TAP_TO_WAKE)) {
                 mWasTapToWakeEnabled =
-                        mHardware.get(CMHardwareManager.FEATURE_TAP_TO_WAKE);
-                mHardware.set(CMHardwareManager.FEATURE_TAP_TO_WAKE, false);
+                        mHardware.get(MKHardwareManager.FEATURE_TAP_TO_WAKE);
+                mHardware.set(MKHardwareManager.FEATURE_TAP_TO_WAKE, false);
             }
         } else {
             Log.i(this, "Proximity wake lock already acquired");
@@ -86,9 +86,9 @@ public class ProximitySensorManager extends CallsManagerListenerBase {
             return;
         }
         if (mProximityWakeLock.isHeld()) {
-            if (mHardware.isSupported(CMHardwareManager.FEATURE_TAP_TO_WAKE)
+            if (mHardware.isSupported(MKHardwareManager.FEATURE_TAP_TO_WAKE)
                     && mWasTapToWakeEnabled) {
-                mHardware.set(CMHardwareManager.FEATURE_TAP_TO_WAKE, true);
+                mHardware.set(MKHardwareManager.FEATURE_TAP_TO_WAKE, true);
             }
             Log.i(this, "Releasing proximity wake lock");
             int flags =

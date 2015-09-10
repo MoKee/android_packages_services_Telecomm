@@ -1,5 +1,6 @@
 /*
  * Copyright 2014, The Android Open Source Project
+ * Copyright 2015, The MoKee OpenSource Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +32,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.mokee.utils.MoKeeUtils;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -71,6 +73,7 @@ class MissedCallNotifier extends CallsManagerListenerBase {
         Calls.DATE,
         Calls.DURATION,
         Calls.TYPE,
+        Calls.GEOCODED_LOCATION,
     };
 
     private static final int CALL_LOG_COLUMN_ID = 0;
@@ -79,6 +82,7 @@ class MissedCallNotifier extends CallsManagerListenerBase {
     private static final int CALL_LOG_COLUMN_DATE = 3;
     private static final int CALL_LOG_COLUMN_DURATION = 4;
     private static final int CALL_LOG_COLUMN_TYPE = 5;
+    private static final int CALL_LOG_COLUMN_GEOCODED_LOCATION = 6;
 
     private static final int MISSED_CALL_NOTIFICATION_ID = 1;
 
@@ -334,14 +338,19 @@ class MissedCallNotifier extends CallsManagerListenerBase {
         String handle = call.getHandle() == null ? null : call.getHandle().getSchemeSpecificPart();
         String name = call.getName();
 
+        CharSequence location = "";
+        if (MoKeeUtils.isSupportLanguage(true)) {
+            location = call.getGeocodedLocation();
+        }
+
         if (!TextUtils.isEmpty(name) && TextUtils.isGraphic(name)) {
-            return name;
+            return !TextUtils.isEmpty(location) ? name + " " + location : name;
         } else if (!TextUtils.isEmpty(handle)) {
             // A handle should always be displayed LTR using {@link BidiFormatter} regardless of the
             // content of the rest of the notification.
             // TODO: Does this apply to SIP addresses?
             BidiFormatter bidiFormatter = BidiFormatter.getInstance();
-            return bidiFormatter.unicodeWrap(handle, TextDirectionHeuristics.LTR);
+            return !TextUtils.isEmpty(location) ? bidiFormatter.unicodeWrap(handle, TextDirectionHeuristics.LTR) + " " + location : bidiFormatter.unicodeWrap(handle, TextDirectionHeuristics.LTR);
         } else {
             // Use "unknown" if the call is unidentifiable.
             return mContext.getString(R.string.unknown);
@@ -464,13 +473,14 @@ class MissedCallNotifier extends CallsManagerListenerBase {
                                         PhoneAccount.SCHEME_SIP : PhoneAccount.SCHEME_TEL,
                                                 handleString, null);
                             }
-
+                            final String location = cursor.getString(CALL_LOG_COLUMN_GEOCODED_LOCATION);
                             // Convert the data to a call object
                             Call call = new Call(mContext, null, null, null, null, null, true,
                                     false);
                             call.setDisconnectCause(new DisconnectCause(DisconnectCause.MISSED));
                             call.setState(CallState.DISCONNECTED);
                             call.setCreationTimeMillis(date);
+                            call.setGeocodedLocation(location);
 
                             // Listen for the update to the caller information before posting the
                             // notification so that we have the contact info and photo.
