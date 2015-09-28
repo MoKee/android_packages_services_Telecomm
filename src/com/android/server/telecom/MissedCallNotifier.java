@@ -32,7 +32,6 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.mokee.utils.MoKeeUtils;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -338,10 +337,7 @@ class MissedCallNotifier extends CallsManagerListenerBase {
         String handle = call.getHandle() == null ? null : call.getHandle().getSchemeSpecificPart();
         String name = call.getName();
 
-        CharSequence location = "";
-        if (MoKeeUtils.isSupportLanguage(true)) {
-            location = call.getGeocodedLocation();
-        }
+        CharSequence location = call.getGeocodedLocation();
 
         if (!TextUtils.isEmpty(name) && TextUtils.isGraphic(name)) {
             return !TextUtils.isEmpty(location) ? name + " " + location : name;
