@@ -2248,9 +2248,9 @@ public final class CallsManager extends Call.ListenerBase {
         // Result is one of: MATCH_NONE, MATCH_LIST or MATCH_REGEX
         int listType = BlacklistUtils.isListed(mContext, number, BlacklistUtils.BLOCK_CALLS);
         if (listType != BlacklistUtils.MATCH_NONE || BlacklistUtils.isBlacklistAllNumberEnabled(mContext)
-                || BlacklistUtils.isBlacklistAdvertisementNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$PhoneType.ADVERTISEMENT
-                || BlacklistUtils.isBlacklistFraudNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$PhoneType.FRAUD
-                || BlacklistUtils.isBlacklistHarassNumberEnabled(mContext) && c.getCallerPhoneNumberType() == CloudNumber$PhoneType.HARASS) {
+                || BlacklistUtils.isBlacklistAdvertisementNumberEnabled(mContext) && c.getCallerPhoneNumberType().equals(CloudNumber$PhoneType.ADVERTISEMENT)
+                || BlacklistUtils.isBlacklistFraudNumberEnabled(mContext) && c.getCallerPhoneNumberType().equals(CloudNumber$PhoneType.FRAUD)
+                || BlacklistUtils.isBlacklistHarassNumberEnabled(mContext) && c.getCallerPhoneNumberType().equals(CloudNumber$PhoneType.HARASS)) {
             // We have a match, set the user and hang up the call and notify
             Log.d(this, "Incoming call from " + number + " blocked.");
             mBlacklistCallNotifier.notifyBlacklistedCall(number, c.getGeocodedLocation(),
