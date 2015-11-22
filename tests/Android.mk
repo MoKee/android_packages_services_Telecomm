@@ -22,7 +22,7 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
         android-support-v4 \
         guava \
         mockito-target \
-        org.cyanogenmod.platform.sdk
+        org.mokee.platform.sdk
 
 LOCAL_SRC_FILES := \
         $(call all-java-files-under, src) \
