@@ -47,7 +47,7 @@ import com.android.internal.telephony.SmsApplication;
 import com.android.server.telecom.ContactsAsyncHelper.OnImageLoadCompleteListener;
 import com.android.internal.util.Preconditions;
 
-import com.mokee.cloud.location.CloudNumber$PhoneType;
+import com.mokee.cloud.location.CloudNumber;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -243,7 +243,7 @@ final class Call implements CreateConnectionResponse {
     private String mCallerLocation;
 
     /** The caller phone number type set by the cloud or offline engine. */
-    private CloudNumber$PhoneType mCallerPhoneNumberType;
+    private CloudNumber.PhoneType mCallerPhoneNumberType;
 
     /**
      * The presentation requirements for the handle. See {@link TelecomManager} for valid values.
@@ -717,11 +717,11 @@ final class Call implements CreateConnectionResponse {
         return mCallerLocation;
     }
 
-    CloudNumber$PhoneType getCallerPhoneNumberType() {
+    CloudNumber.PhoneType getCallerPhoneNumberType() {
         return mCallerPhoneNumberType;
     }
 
-    void setCallerPhoneNumberType(CloudNumber$PhoneType type) {
+    void setCallerPhoneNumberType(CloudNumber.PhoneType type) {
         mCallerPhoneNumberType = type;
     }
 
