@@ -1,5 +1,6 @@
 /*
  * Copyright 2014, The Android Open Source Project
+ * Copyright 2015-2016, The MoKee Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,6 +97,7 @@ public class MissedCallNotifierImpl extends CallsManagerListenerBase implements 
         Calls.DATE,
         Calls.DURATION,
         Calls.TYPE,
+        Calls.GEOCODED_LOCATION,
     };
 
     private static final int CALL_LOG_COLUMN_ID = 0;
@@ -104,6 +106,7 @@ public class MissedCallNotifierImpl extends CallsManagerListenerBase implements 
     private static final int CALL_LOG_COLUMN_DATE = 3;
     private static final int CALL_LOG_COLUMN_DURATION = 4;
     private static final int CALL_LOG_COLUMN_TYPE = 5;
+    private static final int CALL_LOG_COLUMN_GEOCODED_LOCATION = 6;
 
     private static final int MISSED_CALL_NOTIFICATION_ID = 1;
 
@@ -411,14 +414,16 @@ public class MissedCallNotifierImpl extends CallsManagerListenerBase implements 
             }
         }
 
+        CharSequence location = call.getGeocodedLocation();
+
         if (!TextUtils.isEmpty(name) && TextUtils.isGraphic(name)) {
-            return name;
+            return !TextUtils.isEmpty(location) ? name + " " + location : name;
         } else if (!TextUtils.isEmpty(handle)) {
             // A handle should always be displayed LTR using {@link BidiFormatter} regardless of the
             // content of the rest of the notification.
             // TODO: Does this apply to SIP addresses?
             BidiFormatter bidiFormatter = BidiFormatter.getInstance();
-            return bidiFormatter.unicodeWrap(handle, TextDirectionHeuristics.LTR);
+            return !TextUtils.isEmpty(location) ? bidiFormatter.unicodeWrap(handle, TextDirectionHeuristics.LTR) + " " + location : bidiFormatter.unicodeWrap(handle, TextDirectionHeuristics.LTR);
         } else {
             // Use "unknown" if the call is unidentifiable.
             return mContext.getString(R.string.unknown);
@@ -576,6 +581,8 @@ public class MissedCallNotifierImpl extends CallsManagerListenerBase implements 
                                         new DisconnectCause(DisconnectCause.MISSED));
                                 call.setState(CallState.DISCONNECTED, "throw away call");
                                 call.setCreationTimeMillis(date);
+                                final String location = cursor.getString(CALL_LOG_COLUMN_GEOCODED_LOCATION);
+                                call.setGeocodedLocation(location);
 
                                 // Listen for the update to the caller information before posting
                                 // the notification so that we have the contact info and photo.

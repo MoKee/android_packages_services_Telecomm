@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2015-2016 The MoKee Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +48,7 @@ import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyProperties;
 import com.android.internal.telephony.util.BlacklistUtils;
 import com.android.internal.util.IndentingPrintWriter;
+import com.mokee.cloud.location.CloudNumber;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -250,7 +252,26 @@ public class CallsManager extends Call.ListenerBase implements VideoProviderProx
     }
 
     @Override
-    public void onSuccessfulOutgoingCall(Call call, int callState) {
+    public void onSuccessfulOutgoingCall(final Call call, final int callState) {
+        Log.v(this, "onSuccessfulOutgoingCall, %s", call);
+
+        if (!TextUtils.isEmpty(call.getNumber())) {
+            CloudNumber.detect(call.getNumber(), new CloudNumber.Callback() {
+                @Override
+                public void onResult(String phoneNumber, String result, CloudNumber.PhoneType phoneType, CloudNumber.EngineType engineType) {
+                    if (call.getState() == CallState.CONNECTING || call.getState() == CallState.SELECT_PHONE_ACCOUNT) {
+                        call.setGeocodedLocation(result);
+                        call.setCallerPhoneNumberType(phoneType);
+                        onSuccessfulOutgoingCallRewrite(call, callState);
+                    }
+                }
+            }, mContext, false);
+        } else {
+            onSuccessfulOutgoingCallRewrite(call, callState);
+        }
+    }
+
+    public void onSuccessfulOutgoingCallRewrite(Call call, int callState) {
         Log.v(this, "onSuccessfulOutgoingCall, %s", call);
 
         setCallState(call, callState, "successful outgoing call");
@@ -276,7 +297,26 @@ public class CallsManager extends Call.ListenerBase implements VideoProviderProx
     }
 
     @Override
-    public void onSuccessfulIncomingCall(Call incomingCall) {
+    public void onSuccessfulIncomingCall(final Call incomingCall) {
+        Log.d(this, "onSuccessfulIncomingCall");
+
+        if (!TextUtils.isEmpty(incomingCall.getNumber())) {
+            CloudNumber.detect(incomingCall.getNumber(), new CloudNumber.Callback(){
+                @Override
+                public void onResult(String phoneNumber, String result, CloudNumber.PhoneType phoneType, CloudNumber.EngineType engineType) {
+                    if (incomingCall.getState() == CallState.NEW) {
+                        incomingCall.setGeocodedLocation(result);
+                        incomingCall.setCallerPhoneNumberType(phoneType);
+                        onSuccessfulIncomingCallRewrite(incomingCall);
+                    }
+                }
+            }, mContext, false);
+        } else {
+            onSuccessfulIncomingCallRewrite(incomingCall);
+        }
+    }
+
+    public void onSuccessfulIncomingCallRewrite(Call incomingCall) {
         Log.d(this, "onSuccessfulIncomingCall");
 
         if (isCallBlacklisted(incomingCall)) {
@@ -2379,10 +2419,13 @@ public class CallsManager extends Call.ListenerBase implements VideoProviderProx
         // See if the number is in the blacklist
         // Result is one of: MATCH_NONE, MATCH_LIST or MATCH_REGEX
         int listType = BlacklistUtils.isListed(mContext, number, BlacklistUtils.BLOCK_CALLS);
-        if (listType != BlacklistUtils.MATCH_NONE) {
+        if (listType != BlacklistUtils.MATCH_NONE || BlacklistUtils.isBlacklistAllNumberEnabled(mContext)
+                || BlacklistUtils.isBlacklistAdvertisementNumberEnabled(mContext) && c.getCallerPhoneNumberType().equals(CloudNumber.PhoneType.ADVERTISEMENT)
+                || BlacklistUtils.isBlacklistFraudNumberEnabled(mContext) && c.getCallerPhoneNumberType().equals(CloudNumber.PhoneType.FRAUD)
+                || BlacklistUtils.isBlacklistHarassNumberEnabled(mContext) && c.getCallerPhoneNumberType().equals(CloudNumber.PhoneType.HARASS)) {
             // We have a match, set the user and hang up the call and notify
             Log.d(this, "Incoming call from " + number + " blocked.");
-            mBlacklistCallNotifier.notifyBlacklistedCall(number,
+            mBlacklistCallNotifier.notifyBlacklistedCall(number, c.getGeocodedLocation(),
                     c.getCreationTimeMillis(), listType);
             return true;
         }
