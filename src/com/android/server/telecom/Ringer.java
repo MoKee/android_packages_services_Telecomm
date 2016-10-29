@@ -27,7 +27,7 @@ import android.os.Bundle;
 import android.os.Vibrator;
 
 import com.android.internal.annotations.VisibleForTesting;
-import cyanogenmod.providers.CMSettings;
+import mokee.providers.MKSettings;
 
 /**
  * Controls the ringtone player.
@@ -127,11 +127,11 @@ public class Ringer {
             int rampUpTime = 0;
 
             final ContentResolver cr = mContext.getContentResolver();
-            if (CMSettings.System.getInt(cr, CMSettings.System.INCREASING_RING, 0) != 0) {
-                startVolume = CMSettings.System.getFloat(cr,
-                        CMSettings.System.INCREASING_RING_START_VOLUME, 0.1f);
-                rampUpTime = CMSettings.System.getInt(cr,
-                        CMSettings.System.INCREASING_RING_RAMP_UP_TIME, 20);
+            if (MKSettings.System.getInt(cr, MKSettings.System.INCREASING_RING, 0) != 0) {
+                startVolume = MKSettings.System.getFloat(cr,
+                        MKSettings.System.INCREASING_RING_START_VOLUME, 0.1f);
+                rampUpTime = MKSettings.System.getInt(cr,
+                        MKSettings.System.INCREASING_RING_RAMP_UP_TIME, 20);
             }
 
             // Because we wait until a contact info query to complete before processing a
