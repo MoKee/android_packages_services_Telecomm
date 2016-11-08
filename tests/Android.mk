@@ -24,7 +24,7 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
         mockito-target \
         ims-ext-common \
         platform-test-annotations \
-        org.cyanogenmod.platform.internal
+        org.mokee.platform.internal
 
 LOCAL_SRC_FILES := \
         $(call all-java-files-under, src) \
