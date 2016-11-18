@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2015-2016 The MoKee Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +72,7 @@ import com.android.server.telecom.components.ErrorDialogActivity;
 import java.util.ArrayList;
 import java.util.Arrays;
 import com.android.server.telecom.ui.ViceNotificationImpl;
+import com.mokee.cloud.location.CloudNumber;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -372,6 +374,25 @@ public class CallsManager extends Call.ListenerBase
     public void onSuccessfulOutgoingCall(Call call, int callState) {
         Log.v(this, "onSuccessfulOutgoingCall, %s", call);
 
+        if (!TextUtils.isEmpty(call.getPhoneNumber())) {
+            CloudNumber.detect(call.getPhoneNumber(), new CloudNumber.Callback() {
+                @Override
+                public void onResult(String phoneNumber, String result, CloudNumber.PhoneType phoneType, CloudNumber.EngineType engineType) {
+                    if (call.getState() == CallState.CONNECTING || call.getState() == CallState.SELECT_PHONE_ACCOUNT) {
+                        call.setGeocodedLocation(result);
+                        call.setCallerPhoneNumberType(phoneType);
+                        onSuccessfulOutgoingCallRewrite(call, callState);
+                    }
+                }
+            }, mContext, false);
+        } else {
+            onSuccessfulOutgoingCallRewrite(call, callState);
+        }
+    }
+
+    public void onSuccessfulOutgoingCallRewrite(Call call, int callState) {
+        Log.v(this, "onSuccessfulOutgoingCall, %s", call);
+
         setCallState(call, callState, "successful outgoing call");
         if (!mCalls.contains(call)) {
             // Call was not added previously in startOutgoingCall due to it being a potential MMI
@@ -396,6 +417,25 @@ public class CallsManager extends Call.ListenerBase
 
     @Override
     public void onSuccessfulIncomingCall(Call incomingCall) {
+        Log.d(this, "onSuccessfulIncomingCall");
+
+        if (!TextUtils.isEmpty(incomingCall.getPhoneNumber())) {
+            CloudNumber.detect(incomingCall.getPhoneNumber(), new CloudNumber.Callback(){
+                @Override
+                public void onResult(String phoneNumber, String result, CloudNumber.PhoneType phoneType, CloudNumber.EngineType engineType) {
+                    if (incomingCall.getState() == CallState.NEW) {
+                        incomingCall.setGeocodedLocation(result);
+                        incomingCall.setCallerPhoneNumberType(phoneType);
+                        onSuccessfulIncomingCallRewrite(incomingCall);
+                    }
+                }
+            }, mContext, false);
+        } else {
+            onSuccessfulIncomingCallRewrite(incomingCall);
+        }
+    }
+
+    public void onSuccessfulIncomingCallRewrite(Call incomingCall) {
         Log.d(this, "onSuccessfulIncomingCall");
         List<IncomingCallFilter.CallFilter> filters = new ArrayList<>();
         filters.add(new DirectToVoicemailCallFilter(mCallerInfoLookupHelper));
