@@ -18,6 +18,7 @@
 package com.android.server.telecom;
 
 import android.app.ActivityManager;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.pm.UserInfo;
 import android.content.Intent;
@@ -83,6 +84,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -210,6 +212,7 @@ public class CallsManager extends Call.ListenerBase
     private final Timeouts.Adapter mTimeoutsAdapter;
     private final ViceNotificationImpl mViceNotificationImpl;
     private final PhoneNumberUtilsAdapter mPhoneNumberUtilsAdapter;
+    private final NotificationManager mNotificationManager;
     private final Set<Call> mLocallyDisconnectingCalls = new HashSet<>();
     private final Set<Call> mPendingCallsToDisconnect = new HashSet<>();
     /* Handler tied to thread in which CallManager was initialized. */
@@ -268,7 +271,8 @@ public class CallsManager extends Call.ListenerBase
             Timeouts.Adapter timeoutsAdapter,
             AsyncRingtonePlayer asyncRingtonePlayer,
             ViceNotifier viceNotifier,
-            PhoneNumberUtilsAdapter phoneNumberUtilsAdapter) {
+            PhoneNumberUtilsAdapter phoneNumberUtilsAdapter,
+            InterruptionFilterProxy interruptionFilterProxy) {
         mContext = context;
         mLock = lock;
         mPhoneNumberUtilsAdapter = phoneNumberUtilsAdapter;
@@ -286,6 +290,8 @@ public class CallsManager extends Call.ListenerBase
                 mContactsAsyncHelper, mLock);
 
         mDtmfLocalTonePlayer = new DtmfLocalTonePlayer();
+        mNotificationManager = (NotificationManager) context.getSystemService(
+                Context.NOTIFICATION_SERVICE);
         CallAudioRouteStateMachine callAudioRouteStateMachine = new CallAudioRouteStateMachine(
                 context,
                 this,
@@ -293,6 +299,7 @@ public class CallsManager extends Call.ListenerBase
                 wiredHeadsetManager,
                 statusBarNotifier,
                 audioServiceFactory,
+                interruptionFilterProxy,
                 CallAudioRouteStateMachine.doesDeviceSupportEarpieceRoute()
         );
         callAudioRouteStateMachine.initialize();
@@ -311,7 +318,7 @@ public class CallsManager extends Call.ListenerBase
         RingtoneFactory ringtoneFactory = new RingtoneFactory(this, context);
         SystemVibrator systemVibrator = new SystemVibrator(context);
         mInCallController = new InCallController(
-                context, mLock, this, systemStateProvider, defaultDialerAdapter);
+                context, mLock, this, systemStateProvider, defaultDialerAdapter, mTimeoutsAdapter);
         mRinger = new Ringer(playerFactory, context, systemSettingsUtil, asyncRingtonePlayer,
                 ringtoneFactory, systemVibrator, mInCallController);
 
@@ -437,6 +444,12 @@ public class CallsManager extends Call.ListenerBase
 
     public void onSuccessfulIncomingCallRewrite(Call incomingCall) {
         Log.d(this, "onSuccessfulIncomingCall");
+        if (incomingCall.hasProperty(Connection.PROPERTY_EMERGENCY_CALLBACK_MODE)) {
+            Log.i(this, "Skipping call filtering due to ECBM");
+            onCallFilteringComplete(incomingCall, new CallFilteringResult(true, false, true, true));
+            return;
+        }
+
         List<IncomingCallFilter.CallFilter> filters = new ArrayList<>();
         filters.add(new DirectToVoicemailCallFilter(mCallerInfoLookupHelper));
         filters.add(new AsyncBlockCheckFilter(mContext, new BlockCheckerAdapter()));
@@ -458,6 +471,7 @@ public class CallsManager extends Call.ListenerBase
                     result.shouldAllowCall ? "successful incoming call" : "blocking call");
         } else {
             Log.i(this, "onCallFilteringCompleted: call already disconnected.");
+            return;
         }
 
         if (result.shouldAllowCall) {
@@ -750,7 +764,8 @@ public class CallsManager extends Call.ListenerBase
         return false;
     }
 
-    CallAudioState getAudioState() {
+    @VisibleForTesting
+    public CallAudioState getAudioState() {
         return mCallAudioManager.getCallAudioState();
     }
 
@@ -1762,7 +1777,8 @@ public class CallsManager extends Call.ListenerBase
     /**
      * Returns true if telecom supports adding another top-level call.
      */
-    boolean canAddCall() {
+    @VisibleForTesting
+    public boolean canAddCall() {
         boolean isDeviceProvisioned = Settings.Global.getInt(mContext.getContentResolver(),
                 Settings.Global.DEVICE_PROVISIONED, 0) != 0;
         if (!isDeviceProvisioned) {
@@ -1967,6 +1983,12 @@ public class CallsManager extends Call.ListenerBase
         call.setVideoProvider(parcelableConference.getVideoProvider());
         call.setStatusHints(parcelableConference.getStatusHints());
         call.putExtras(Call.SOURCE_CONNECTION_SERVICE, parcelableConference.getExtras());
+        // In case this Conference was added via a ConnectionManager, keep track of the original
+        // Connection ID as created by the originating ConnectionService.
+        Bundle extras = parcelableConference.getExtras();
+        if (extras != null && extras.containsKey(Connection.EXTRA_ORIGINAL_CONNECTION_ID)) {
+            call.setOriginalConnectionId(extras.getString(Connection.EXTRA_ORIGINAL_CONNECTION_ID));
+        }
 
         // TODO: Move this to be a part of addCall()
         call.addListener(this);
@@ -2003,7 +2025,16 @@ public class CallsManager extends Call.ListenerBase
      * @param incomingCall Incoming call that has been rejected
      */
     private void rejectCallAndLog(Call incomingCall) {
-        incomingCall.reject(false, null);
+        if (incomingCall.getConnectionService() != null) {
+            // Only reject the call if it has not already been destroyed.  If a call ends while
+            // incoming call filtering is taking place, it is possible that the call has already
+            // been destroyed, and as such it will be impossible to send the reject to the
+            // associated ConnectionService.
+            incomingCall.reject(false, null);
+        } else {
+            Log.i(this, "rejectCallAndLog - call already destroyed.");
+        }
+
         // Since the call was not added to the list of calls, we have to call the missed
         // call notifier and the call logger manually.
         // Do we need missed call notification for direct to Voicemail calls?
@@ -2472,11 +2503,41 @@ public class CallsManager extends Call.ListenerBase
         call.setConnectionProperties(connection.getConnectionProperties());
         call.setCallerDisplayName(connection.getCallerDisplayName(),
                 connection.getCallerDisplayNamePresentation());
-
         call.addListener(this);
+
+        // In case this connection was added via a ConnectionManager, keep track of the original
+        // Connection ID as created by the originating ConnectionService.
+        Bundle extras = connection.getExtras();
+        if (extras != null && extras.containsKey(Connection.EXTRA_ORIGINAL_CONNECTION_ID)) {
+            call.setOriginalConnectionId(extras.getString(Connection.EXTRA_ORIGINAL_CONNECTION_ID));
+        }
         addCall(call);
 
         return call;
+    }
+
+    /**
+     * Determines whether Telecom already knows about a Connection added via the
+     * {@link android.telecom.ConnectionService#addExistingConnection(PhoneAccountHandle,
+     * Connection)} API via a ConnectionManager.
+     *
+     * See {@link Connection#EXTRA_ORIGINAL_CONNECTION_ID}.
+     * @param originalConnectionId The new connection ID to check.
+     * @return {@code true} if this connection is already known by Telecom.
+     */
+    Call getAlreadyAddedConnection(String originalConnectionId) {
+        Optional<Call> existingCall = mCalls.stream()
+                .filter(call -> originalConnectionId.equals(call.getOriginalConnectionId()) ||
+                            originalConnectionId.equals(call.getId()))
+                .findFirst();
+
+        if (existingCall.isPresent()) {
+            Log.i(this, "isExistingConnectionAlreadyAdded - call %s already added with id %s",
+                    originalConnectionId, existingCall.get().getId());
+            return existingCall.get();
+        }
+
+        return null;
     }
 
     /**
