@@ -316,7 +316,7 @@ public class CallAudioRouteStateMachine extends StateMachine {
             }
             CallAudioState newState = new CallAudioState(mIsMuted, ROUTE_EARPIECE,
                     mAvailableRoutes);
-            setSystemAudioState(newState);
+            setSystemAudioState(newState, true);
             updateInternalCallAudioState();
         }
 
@@ -504,7 +504,7 @@ public class CallAudioRouteStateMachine extends StateMachine {
             setBluetoothOn(false);
             CallAudioState newState = new CallAudioState(mIsMuted, ROUTE_WIRED_HEADSET,
                     mAvailableRoutes);
-            setSystemAudioState(newState);
+            setSystemAudioState(newState, true);
             updateInternalCallAudioState();
         }
 
@@ -686,7 +686,7 @@ public class CallAudioRouteStateMachine extends StateMachine {
             setBluetoothOn(true);
             CallAudioState newState = new CallAudioState(mIsMuted, ROUTE_BLUETOOTH,
                     mAvailableRoutes);
-            setSystemAudioState(newState);
+            setSystemAudioState(newState, true);
             updateInternalCallAudioState();
         }
 
