@@ -33,7 +33,7 @@ import android.os.Vibrator;
 
 import com.android.internal.annotations.VisibleForTesting;
 
-import lineageos.providers.LineageSettings;
+import mokee.providers.MKSettings;
 
 import java.util.ArrayList;
 
@@ -189,12 +189,12 @@ public class Ringer {
             int rampUpTime = 0;
 
             final ContentResolver cr = mContext.getContentResolver();
-            if (LineageSettings.System.getInt(cr,
-                    LineageSettings.System.INCREASING_RING, 0) != 0) {
-                startVolume = LineageSettings.System.getFloat(cr,
-                        LineageSettings.System.INCREASING_RING_START_VOLUME, 0.1f);
-                rampUpTime = LineageSettings.System.getInt(cr,
-                        LineageSettings.System.INCREASING_RING_RAMP_UP_TIME, 20);
+            if (MKSettings.System.getInt(cr,
+                    MKSettings.System.INCREASING_RING, 0) != 0) {
+                startVolume = MKSettings.System.getFloat(cr,
+                        MKSettings.System.INCREASING_RING_START_VOLUME, 0.1f);
+                rampUpTime = MKSettings.System.getInt(cr,
+                        MKSettings.System.INCREASING_RING_RAMP_UP_TIME, 20);
             }
 
             // Because we wait until a contact info query to complete before processing a
