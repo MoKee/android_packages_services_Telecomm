@@ -45,7 +45,7 @@ import com.android.internal.telephony.CallerInfo;
 import com.android.internal.telephony.SubscriptionController;
 import com.android.server.telecom.callfiltering.CallFilteringResult;
 
-import org.mokee.internal.phone.SensitivePhoneNumbers;
+import org.mokee.lib.phone.SensitivePhoneNumbers;
 
 import java.util.Arrays;
 import java.util.Locale;
