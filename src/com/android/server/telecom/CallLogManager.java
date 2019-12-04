@@ -40,7 +40,7 @@ import android.telephony.PhoneNumberUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.telephony.CallerInfo;
 
-import org.mokee.internal.phone.SensitivePhoneNumbers;
+import org.mokee.lib.phone.SensitivePhoneNumbers;
 
 import java.util.Arrays;
 import java.util.HashSet;
