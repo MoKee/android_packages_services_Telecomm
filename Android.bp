@@ -3,8 +3,8 @@ android_app {
     name: "Telecom",
     libs: ["telephony-common"],
     static_libs: [
-        "org.lineageos.platform.internal",
-        "org.lineageos.lib.phone",
+        "org.mokee.platform.internal",
+        "org.mokee.lib.phone",
     ],
     srcs: [
         "src/**/*.java",
