@@ -35,7 +35,7 @@ import android.os.Vibrator;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.telecom.LogUtils.EventTimer;
 
-import lineageos.providers.LineageSettings;
+import mokee.providers.MoKeeSettings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -310,12 +310,12 @@ public class Ringer {
                         mVolumeShaperConfig, isVibratorEnabled);
             } else {
                 final ContentResolver cr = mContext.getContentResolver();
-                if (LineageSettings.System.getInt(cr,
-                        LineageSettings.System.INCREASING_RING, 0) != 0) {
-                    float startVolume = LineageSettings.System.getFloat(cr,
-                            LineageSettings.System.INCREASING_RING_START_VOLUME, 0.1f);
-                    int rampUpTime = LineageSettings.System.getInt(cr,
-                            LineageSettings.System.INCREASING_RING_RAMP_UP_TIME, 20);
+                if (MoKeeSettings.System.getInt(cr,
+                        MoKeeSettings.System.INCREASING_RING, 0) != 0) {
+                    float startVolume = MoKeeSettings.System.getFloat(cr,
+                            MoKeeSettings.System.INCREASING_RING_START_VOLUME, 0.1f);
+                    int rampUpTime = MoKeeSettings.System.getInt(cr,
+                            MoKeeSettings.System.INCREASING_RING_RAMP_UP_TIME, 20);
                     if (mVolumeShaperConfig == null
                         || mRampingRingerDuration != rampUpTime
                         || mRampingRingerStartVolume != startVolume) {

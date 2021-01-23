@@ -18,8 +18,8 @@ filegroup {
 android_app {
     name: "Telecom",
     static_libs: [
-        "org.lineageos.lib.phone",
-        "org.lineageos.platform.internal",
+        "org.mokee.lib.phone",
+        "org.mokee.platform.internal",
     ],
     srcs: [
         ":Telecom-srcs",

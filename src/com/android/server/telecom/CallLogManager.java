@@ -44,7 +44,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import android.telecom.CallerInfo;
 import com.android.server.telecom.callfiltering.CallFilteringResult;
 
-import org.lineageos.lib.phone.SensitivePhoneNumbers;
+import org.mokee.lib.phone.SensitivePhoneNumbers;
 
 import java.util.Arrays;
 import java.util.Locale;
